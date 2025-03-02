@@ -28,8 +28,18 @@ struct JokeView: View {
                     Text(currentJoke.punchline ?? "")
 
                 }
+                .padding()
                 .font(.title)
                 .multilineTextAlignment(.center)
+                
+            } else {
+
+                Spacer()
+                
+                // Show a spinner to indicate that data is being loaded
+                ProgressView()
+                
+                Spacer()
                 
             }
             
