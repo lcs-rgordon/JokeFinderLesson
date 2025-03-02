@@ -7,6 +7,9 @@
 
 import SwiftUI
 
+// NOTE: Excellent summary of how timers work at:
+//       https://sarunw.com/posts/timer-in-swiftui/
+
 struct JokeView: View {
     
     // MARK: Stored properties
@@ -16,10 +19,16 @@ struct JokeView: View {
     
     // Controls punchline visibility
     @State var punchlineOpacity = 0.0
-    
+
+    // Controls button visibility
+    @State var buttonOpacity = 0.0
+
     // Starts a timer to wait on revealing punchline
-    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    
+    @State var punchlineTimer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+
+    // Starts a timer to wait on revealing button to get new joke
+    @State var buttonTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+
     // MARK: Computed properties
     var body: some View {
         VStack {
@@ -33,22 +42,53 @@ struct JokeView: View {
                     
                     Text(currentJoke.punchline ?? "")
                         .opacity(punchlineOpacity)
-                        .onReceive(timer) { _ in
+                        .onReceive(punchlineTimer) { _ in
                             
                             withAnimation {
                                 punchlineOpacity = 1.0
                             }
                             
                             // Stop the timer
-                            timer.upstream.connect().cancel()
+                            punchlineTimer.upstream.connect().cancel()
                         }
-
-
+                    
                 }
                 .padding()
                 .font(.title)
                 .multilineTextAlignment(.center)
                 
+                Button {
+                    // Hide punchline and button
+                    withAnimation {
+                        viewModel.currentJoke = nil
+                        punchlineOpacity = 0.0
+                        buttonOpacity = 0.0
+                    }
+                                        
+                    // Get a new joke
+                    Task {
+                        await viewModel.fetchJoke()
+                    }
+                    
+                    // Restart timers
+                    punchlineTimer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+                    buttonTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+                } label: {
+                    Text("New Joke")
+                }
+                .buttonStyle(.borderedProminent)
+                .opacity(buttonOpacity)
+                .onReceive(buttonTimer) { _ in
+                    
+                    withAnimation {
+                        buttonOpacity = 1.0
+                    }
+                    
+                    // Stop the timer
+                    buttonTimer.upstream.connect().cancel()
+                }
+
+
             } else {
 
                 Spacer()
