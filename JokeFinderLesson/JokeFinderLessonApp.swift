@@ -18,7 +18,7 @@ struct JokeFinderLessonApp: App {
     // MARK: Computed properties
     var body: some Scene {
         WindowGroup {
-            JokeView()
+            LandingView()
                 .environment(viewModel)
         }
     }
