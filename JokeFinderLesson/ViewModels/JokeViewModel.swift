@@ -93,6 +93,13 @@ class JokeViewModel {
         
     }
     
+    // Clear the current joke
+    func clearJoke() {
+
+        self.currentJoke = nil
+
+    }
+    
     // Add the current joke to the list of favourites
     func saveJoke() {
         

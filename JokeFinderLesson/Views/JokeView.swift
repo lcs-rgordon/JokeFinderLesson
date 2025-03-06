@@ -20,119 +20,114 @@ struct JokeView: View {
     // Controls punchline visibility
     @State var punchlineOpacity = 0.0
 
-    // Controls button visibility
-    @State var buttonOpacity = 0.0
-    
-    // Controls whether save button is enabled
-    @State var jokeHasBeenSaved = false
-
     // Starts a timer to wait on revealing punchline
     @State var punchlineTimer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
 
-    // Starts a timer to wait on revealing button to get new joke
-    @State var buttonTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    // Set the hue for the background color
+    @State var hue = 60.0/360.0 // Yellow
+    
+    // Controls amount of offset when dragging
+    @State var dragOffset = CGSize.zero
 
     // MARK: Computed properties
     var body: some View {
         NavigationStack {
-            VStack {
+            ZStack {
                 
-                // Show a joke if one exists
-                if let currentJoke = viewModel.currentJoke {
+                // Background
+                Color(hue: (60.0 + dragOffset.width / 4) / 360.0, saturation: 0.8, brightness: 0.9)
+                    .ignoresSafeArea()
+
+
+                // Foreground
+                VStack {
                     
-                    Group {
-                        Text(currentJoke.setup ?? "")
-                            .padding(.bottom, 100)
+                    // Show a joke if one exists
+                    if let currentJoke = viewModel.currentJoke {
                         
-                        Text(currentJoke.punchline ?? "")
-                            .opacity(punchlineOpacity)
-                            .onReceive(punchlineTimer) { _ in
-                                
-                                withAnimation {
-                                    punchlineOpacity = 1.0
+                        Group {
+                            Text(currentJoke.setup ?? "")
+                                .padding(.bottom, 100)
+                            
+                            Text(currentJoke.punchline ?? "")
+                                .opacity(punchlineOpacity)
+                                .onReceive(punchlineTimer) { _ in
+                                    
+                                    withAnimation {
+                                        punchlineOpacity = 1.0
+                                    }
+                                    
+                                    // Stop the timer
+                                    punchlineTimer.upstream.connect().cancel()
                                 }
-                                
-                                // Stop the timer
-                                punchlineTimer.upstream.connect().cancel()
-                            }
-                        
-                    }
-                    .padding()
-                    .font(.title)
-                    .multilineTextAlignment(.center)
-                    
-                    Button {
-                        
-                        // Save the joke
-                        viewModel.saveJoke()
-                        
-                        // Disable this button until next joke is loaded
-                        jokeHasBeenSaved = true
-                        
-                    } label: {
-                        Text("Save for later")
-                    }
-                    .tint(.green)
-                    .buttonStyle(.borderedProminent)
-                    .opacity(buttonOpacity)
-                    .onReceive(buttonTimer) { _ in
-                        
-                        withAnimation {
-                            buttonOpacity = 1.0
+                            
                         }
-                        
-                    }
-                    .padding(.bottom, 20)
-                    .disabled(jokeHasBeenSaved)
-                    
-                    Button {
-                        // Hide punchline and button
-                        withAnimation {
-                            viewModel.currentJoke = nil
-                            punchlineOpacity = 0.0
-                            buttonOpacity = 0.0
-                        }
-                                            
-                        // Get a new joke
-                        Task {
-                            await viewModel.fetchJoke()
-                        }
-                        
-                        // Restart timers
-                        punchlineTimer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-                        buttonTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
-                        
-                        // Enable save button again
-                        jokeHasBeenSaved = false
-                    } label: {
-                        Text("New Joke")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .opacity(buttonOpacity)
-                    .onReceive(buttonTimer) { _ in
-                        
-                        withAnimation {
-                            buttonOpacity = 1.0
-                        }
-                        
-                        // Stop the timer
-                        buttonTimer.upstream.connect().cancel()
-                    }
-                    
+                        .padding()
+                        .font(.title)
+                        .multilineTextAlignment(.center)
+                        // Ensure that we can drag even when tapping on space between the Text views
+                        .contentShape(Rectangle())
+                        // Rotate the card at 1/5 the distance it has been dragged
+                        .rotationEffect(.degrees(Double(dragOffset.width / 20)))
+                        // Move the view a bit ahead of the finger's position
+                        .offset(x: dragOffset.width)
+                        // Set opacity based on amount of drag
+                        .opacity(2 - Double(abs(dragOffset.width / 75)))
+                        // Enable dragging of this view
+                        .gesture(
+                            DragGesture()
+                                .onChanged { gesture in
+                                    dragOffset = gesture.translation
+                                }
+                                .onEnded { gesture in
+                                    
+                                    // Remove the joke if the user dragged far enough to the left or right
+                                    if abs(dragOffset.width) > 100 {
+                                        
+                                        // Swipe right, save the joke
+                                        if dragOffset.width > 0 {
+                                            viewModel.saveJoke()
+                                        }
+                                        
+                                        // Clear the old joke
+                                        viewModel.clearJoke()
+                                        
+                                        // Now get a new joke
+                                        Task {
+                                            await viewModel.fetchJoke()
+                                            print(viewModel.favouriteJokes.count)
+                                        }
+                                        
+                                        // Move the view back to it's original position
+                                        dragOffset = .zero
+                                        
+                                        // Make the punchline invisible again
+                                        punchlineOpacity = 0
+                                        
+                                    } else {
+                                        
+                                        // Move the view back to it's original position
+                                        dragOffset = .zero
+                                        
+                                    }
+                                }
+                        )
 
-                } else {
+                    } else {
 
-                    Spacer()
-                    
-                    // Show a spinner to indicate that data is being loaded
-                    ProgressView()
-                    
-                    Spacer()
+                        Spacer()
+                        
+                        // Show a spinner to indicate that data is being loaded
+                        ProgressView()
+                        
+                        Spacer()
+                        
+                    }
                     
                 }
-                
+                .navigationTitle("New Jokes")
+
             }
-            .navigationTitle("New Jokes")
         }
     }
 }
