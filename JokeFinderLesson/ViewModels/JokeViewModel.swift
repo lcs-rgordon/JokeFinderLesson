@@ -29,6 +29,10 @@ class JokeViewModel {
         Task {
             await self.fetchJoke()
         }
+        
+        // Get saved jokes from device storage
+        loadFavouriteJokes()
+
     }
     
     // MARK: Function(s)
@@ -99,6 +103,9 @@ class JokeViewModel {
         
         reportOnSavedJokesCount()
         
+        // Write the updated list of jokes to the JSON file stored on device
+        self.persistFavouriteJokes()
+
     }
     
     // Delete a joke from the list of favourites
@@ -110,6 +117,10 @@ class JokeViewModel {
         }
         
         reportOnSavedJokesCount()
+        
+        // Write the updated list of jokes to the JSON file stored on device
+        self.persistFavouriteJokes()
+
     }
     
     // Report on count of saved jokes
@@ -117,5 +128,69 @@ class JokeViewModel {
         // How many saved jokes are there now?
         print("There are \(favouriteJokes.count) jokes saved.")
     }
+
+    // Load saved jokes from file on device
+    func loadFavouriteJokes() {
+        
+        // Get a URL that points to the saved JSON data containing our list of favourite jokes
+        let filename = getDocumentsDirectory().appendingPathComponent(fileLabel)
+        
+        print("Filename we are reading persisted jokes from is:")
+        print(filename)
+        
+        // Attempt to load from the JSON in the stored file
+        do {
+            
+            // Load the raw data
+            let data = try Data(contentsOf: filename)
+            
+            print("Got data from file, contents are:")
+            print(String(data: data, encoding: .utf8)!)
+            
+            // Decode the data into Swift native data structures
+            self.favouriteJokes = try JSONDecoder().decode([Joke].self, from: data)
+            
+        } catch {
+            
+            print(error)
+            print("Could not load data from file, initializing with empty list.")
+            
+            self.favouriteJokes = []
+        }
+        
+    }
     
+    // Write favourite jokes to file on device
+    func persistFavouriteJokes() {
+        
+        // Get a URL that points to the saved JSON data containing our list of people
+        let filename = getDocumentsDirectory().appendingPathComponent(fileLabel)
+        
+        print("Filename we are writing persisted jokes to is is:")
+        print(filename)
+        
+        do {
+            
+            // Create an encoder
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            
+            // Encode the list of people we've tracked
+            let data = try encoder.encode(self.favouriteJokes)
+            
+            // Actually write the JSON file to the documents directory
+            try data.write(to: filename, options: [.atomicWrite, .completeFileProtection])
+            
+            print("Wrote data to file, contents are:")
+            print(String(data: data, encoding: .utf8)!)
+            
+            print("Saved data to documents directory successfully.")
+            
+        } catch {
+            
+            print(error)
+            print("Unable to write list of favourite jokes to documents directory.")
+        }
+        
+    }
 }
