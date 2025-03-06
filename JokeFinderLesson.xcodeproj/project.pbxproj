@@ -80,8 +80,8 @@
 		8128A9412D74F4C500BBE446 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				8128A9442D74F4F300BBE446 /* JokeView.swift */,
 				810B8F012D791B6900AB2AF1 /* LandingView.swift */,
+				8128A9442D74F4F300BBE446 /* JokeView.swift */,
 				810B8F032D791B9400AB2AF1 /* FavouriteJokesView.swift */,
 			);
 			path = Views;

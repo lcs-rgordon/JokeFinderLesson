@@ -8,10 +8,17 @@
 import SwiftUI
 
 struct FavouriteJokesView: View {
+
+    // MARK: Stored properties
+    
+    // Access the view model from the environment
+    @Environment(JokeViewModel.self) var viewModel
+
+    // MARK: Computed properties
     var body: some View {
         NavigationStack {
             VStack {
-                Text("This will show saved jokes.")
+                Text("There are \(viewModel.favouriteJokes.count) saved jokes.")
             }
             .navigationTitle("Favourites")
         }
@@ -20,4 +27,5 @@ struct FavouriteJokesView: View {
 
 #Preview {
     FavouriteJokesView()
+        .environment(JokeViewModel())
 }
