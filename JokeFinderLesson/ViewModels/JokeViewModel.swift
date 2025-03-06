@@ -97,9 +97,25 @@ class JokeViewModel {
             favouriteJokes.insert(currentJoke, at: 0)
         }
         
+        reportOnSavedJokesCount()
+        
+    }
+    
+    // Delete a joke from the list of favourites
+    func delete(_ jokeToDelete: Joke) {
+        
+        // Remove the provided joke from the list of saved favourites
+        favouriteJokes.removeAll { currentJoke in
+            currentJoke.id == jokeToDelete.id
+        }
+        
+        reportOnSavedJokesCount()
+    }
+    
+    // Report on count of saved jokes
+    func reportOnSavedJokesCount() {
         // How many saved jokes are there now?
         print("There are \(favouriteJokes.count) jokes saved.")
-
     }
     
 }
